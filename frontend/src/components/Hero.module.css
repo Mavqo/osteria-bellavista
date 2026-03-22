@@ -1,0 +1,108 @@
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-dark);
+  /* Placeholder gradient simulating a restaurant photo */
+  background-image: linear-gradient(
+    160deg,
+    #1a1a1a 0%,
+    #2a2a2a 40%,
+    #1a1a1a 100%
+  );
+  color: var(--color-sand);
+}
+
+/* Parallax hint overlay */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.55);
+  pointer-events: none;
+}
+
+/* ===== Nav ===== */
+.nav {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem clamp(1rem, 5vw, 4rem);
+}
+
+.brand {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-olive);
+  font-weight: 600;
+}
+
+.navLinks {
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+}
+
+.navLinks a {
+  font-size: 0.85rem;
+  color: rgba(232, 213, 176, 0.7);
+  transition: color 0.2s;
+}
+
+.navLinks a:hover {
+  color: var(--color-sand);
+}
+
+/* ===== Content ===== */
+.content {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--section-padding);
+  max-width: 700px;
+}
+
+.title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  color: var(--color-sand);
+  margin-bottom: 1.25rem;
+}
+
+.tagline {
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  color: rgba(232, 213, 176, 0.75);
+  margin-bottom: 2.5rem;
+}
+
+.cta {
+  display: inline-block;
+  background-color: var(--color-olive);
+  color: var(--color-white);
+  padding: 0.9rem 2rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background-color 0.2s, transform 0.15s;
+  align-self: flex-start;
+}
+
+.cta:hover {
+  background-color: #2d5239;
+  transform: translateY(-1px);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .navLinks {
+    gap: 1.2rem;
+  }
+}

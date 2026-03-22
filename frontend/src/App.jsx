@@ -1,14 +1,12 @@
 import React from 'react'
+import Hero from './components/Hero.jsx'
 
 function App() {
   return (
     <>
-      <nav id="nav" aria-label="Navigazione principale">
-        {/* populated in Task 8 alongside Hero */}
-      </nav>
+      <Hero />
 
       <main>
-        <section id="hero" aria-label="Hero" />
         <section id="menu" aria-label="Il menu" />
         <section id="gallery" aria-label="Galleria" />
         <section id="booking" aria-label="Prenotazioni" />
