@@ -10,11 +10,15 @@ def _get_path() -> str:
 
 @contextmanager
 def get_db():
-    """Yield a SQLite connection with row_factory set to sqlite3.Row."""
+    """Yield a SQLite connection with row_factory and automatic commit/rollback."""
     conn = sqlite3.connect(_get_path())
     conn.row_factory = sqlite3.Row
     try:
         yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -53,4 +57,3 @@ def init_db() -> None:
             "VALUES (?, ?, ?)",
             seed_slots,
         )
-        conn.commit()
