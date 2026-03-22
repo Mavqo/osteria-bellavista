@@ -2,12 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy requirements first for better layer caching
-COPY requirements.txt .
+# Railway build context is the repo root, so prefix paths with backend/
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the backend source
-COPY . .
+COPY backend/ .
 
 EXPOSE 8000
 
