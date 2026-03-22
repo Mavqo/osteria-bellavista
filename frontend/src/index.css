@@ -1,11 +1,12 @@
 /* ===== CSS Variables ===== */
 :root {
-  --color-dark: #1a1a1a;
-  --color-olive: #3d6b4f;
+  --color-dark:       #111111;
+  --color-olive:      #3d6b4f;
   --color-terracotta: #c4614a;
-  --color-sand: #e8d5b0;
-  --color-cream: #f7f3ee;
-  --color-white: #ffffff;
+  --color-sand:       #e8d5b0;
+  --color-cream:      #f7f3ee;
+  --color-white:      #ffffff;
+  --color-stone:      #8b7355;
 
   --font-title: 'Playfair Display', Georgia, serif;
   --font-body: 'Inter', 'Helvetica Neue', sans-serif;
@@ -26,8 +27,8 @@ html {
 
 body {
   font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.75;
   color: var(--color-dark);
   background-color: var(--color-cream);
 }
