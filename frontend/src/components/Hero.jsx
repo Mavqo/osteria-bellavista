@@ -1,29 +1,72 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import styles from './Hero.module.css'
+import heroImg from '../assets/hero.jpg'
 
 function Hero() {
+  const [showScroll, setShowScroll] = useState(true)
+
+  useEffect(() => {
+    function hide() { setShowScroll(false) }
+    window.addEventListener('scroll', hide, { once: true, passive: true })
+    return () => window.removeEventListener('scroll', hide)
+  }, [])
+
   return (
     <section id="hero" className={styles.hero} aria-label="Hero">
-      <nav className={styles.nav} aria-label="Navigazione principale">
-        <span className={styles.brand}>Osteria Bellavista</span>
-        <ul className={styles.navLinks} role="list">
-          <li><a href="#menu">Menu</a></li>
-          <li><a href="#booking">Prenota</a></li>
-          <li><a href="#about">Contatti</a></li>
-        </ul>
-      </nav>
+      <img
+        src={heroImg}
+        alt="Interno Osteria Bellavista"
+        className={styles.heroImg}
+      />
+      <div className={styles.overlay} aria-hidden="true" />
 
       <div className={styles.content}>
-        <h1 className={styles.title}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0 }}
+        >
+          <span className={`section-label ${styles.badge}`}>
+            Dal 1987 · Lugano, Ticino
+          </span>
+        </motion.div>
+
+        <motion.h1
+          className={styles.title}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.15 }}
+        >
           Una cucina che<br />racconta il territorio.
-        </h1>
-        <p className={styles.tagline}>
+        </motion.h1>
+
+        <motion.p
+          className={styles.tagline}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.25 }}
+        >
           Tradizione ticinese, ingredienti locali, vista lago.
-        </p>
-        <a href="#booking" className={styles.cta} aria-label="Prenota un tavolo">
+        </motion.p>
+
+        <motion.a
+          href="#booking"
+          className={styles.cta}
+          aria-label="Prenota un tavolo"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.4 }}
+        >
           Prenota un tavolo →
-        </a>
+        </motion.a>
       </div>
+
+      {showScroll && (
+        <div className={styles.scrollIndicator} aria-hidden="true">
+          <span>↓</span>
+        </div>
+      )}
     </section>
   )
 }

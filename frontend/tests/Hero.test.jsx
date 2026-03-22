@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest'
 import Hero from '../src/components/Hero.jsx'
 
 describe('Hero', () => {
-  it('renders the restaurant name', () => {
+  it('renders the hero section', () => {
     render(<Hero />)
-    expect(screen.getByText('Osteria Bellavista')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /hero/i })).toBeInTheDocument()
   })
 
   it('renders the CTA link pointing to #booking', () => {
