@@ -8,6 +8,7 @@ from slowapi.errors import RateLimitExceeded
 
 from database import init_db
 from limiter import limiter
+from routes.bookings import router as bookings_router
 from routes.slots import router as slots_router
 
 
@@ -35,6 +36,7 @@ app.add_middleware(
 
 # Routes
 app.include_router(slots_router)
+app.include_router(bookings_router)
 
 
 @app.get("/health")
