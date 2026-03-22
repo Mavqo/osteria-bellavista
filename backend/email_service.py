@@ -31,7 +31,7 @@ def send_notification(booking: dict) -> None:
             f"Coperti: {booking['party_size']}\n"
         )
         smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)

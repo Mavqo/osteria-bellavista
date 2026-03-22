@@ -1,6 +1,9 @@
 import pytest
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
+
+from database import get_db
 
 
 def test_create_booking_success(client):
@@ -116,3 +119,33 @@ def test_rate_limit_bookings_returns_429(client):
         client.post("/bookings", json=payload)
     response = client.post("/bookings", json=payload)
     assert response.status_code == 429
+
+
+def test_concurrent_bookings_do_not_overbook(client):
+    """Two simultaneous requests for the last slot should not both succeed."""
+    payload = {
+        "name": "Alice",
+        "date": str(date.today() + timedelta(days=1)),
+        "time_slot": "20:00",
+        "party_size": 2,
+    }
+
+    # Fill slot to max_bookings - 1 (max is 4, insert 3 directly)
+    with get_db() as conn:
+        for _ in range(3):
+            conn.execute(
+                "INSERT INTO bookings (name, date, time_slot, party_size, status) "
+                "VALUES ('Pre', ?, '20:00', 2, 'confirmed')",
+                (payload["date"],),
+            )
+
+    # Launch 2 concurrent requests for the one remaining spot
+    def post():
+        return client.post("/bookings", json=payload)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(post) for _ in range(2)]
+        responses = [f.result() for f in futures]
+
+    statuses = sorted(r.status_code for r in responses)
+    assert statuses == [201, 409], f"Expected one 201 and one 409, got {statuses}"

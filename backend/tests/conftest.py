@@ -10,6 +10,9 @@ def test_db(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_PATH", db_path)
     from database import init_db
     init_db()
+    # Reset rate limiter storage so each test starts with a clean slate
+    from limiter import limiter
+    limiter._storage.reset()
     yield db_path
 
 

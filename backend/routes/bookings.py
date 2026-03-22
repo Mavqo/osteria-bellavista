@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 from database import get_db
 from email_service import send_notification
@@ -10,9 +10,11 @@ router = APIRouter()
 
 @router.post("/bookings", response_model=BookingResponse, status_code=201)
 @limiter.limit("5/minute")
-def create_booking(request: Request, booking: BookingCreate) -> BookingResponse:
+def create_booking(request: Request, booking: BookingCreate, background_tasks: BackgroundTasks) -> BookingResponse:
     """Create a booking if the requested slot is available."""
     with get_db() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+
         # Verify slot exists
         slot = conn.execute(
             "SELECT max_bookings FROM slots_config WHERE time_slot = ? AND is_active = 1",
@@ -48,7 +50,6 @@ def create_booking(request: Request, booking: BookingCreate) -> BookingResponse:
         "status": "confirmed",
     }
 
-    # Non-blocking notification — failure does not affect response
-    send_notification(booking_dict)
+    background_tasks.add_task(send_notification, booking_dict)
 
     return BookingResponse(**booking_dict)
