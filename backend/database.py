@@ -4,8 +4,12 @@ from contextlib import contextmanager
 
 
 def _get_path() -> str:
-    """Return the database file path from env or default."""
-    return os.environ.get("DATABASE_PATH", "osteria.db")
+    """Return the database file path from env or default, creating the directory if needed."""
+    path = os.environ.get("DATABASE_PATH", "osteria.db")
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    return path
 
 
 @contextmanager
