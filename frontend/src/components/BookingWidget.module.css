@@ -1,0 +1,46 @@
+.widget {
+  background: var(--color-white);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  align-items: center;
+}
+.stepDot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  position: relative;
+}
+.stepDot:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: calc(50% + 14px);
+  right: calc(-50% + 14px);
+  height: 2px;
+  background: #e0e0e0;
+}
+.dotNum {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #999;
+}
+.active .dotNum { background: var(--color-olive); color: white; }
+.done .dotNum { background: var(--color-olive); color: white; }
+.dotLabel { font-size: 0.65rem; color: #999; text-align: center; }
+.active .dotLabel, .done .dotLabel { color: var(--color-olive); }
+.content { min-height: 200px; }
