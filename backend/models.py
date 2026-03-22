@@ -1,14 +1,13 @@
 from datetime import date
 import re
 from pydantic import BaseModel, field_validator
-from typing import Optional
 
 
 class BookingCreate(BaseModel):
     """Input model for creating a booking."""
 
     name: str
-    phone: Optional[str] = None
+    phone: str | None = None
     date: date
     time_slot: str
     party_size: int
@@ -26,7 +25,7 @@ class BookingCreate(BaseModel):
 
     @field_validator("phone")
     @classmethod
-    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+    def validate_phone(cls, v: str | None) -> str | None:
         """Allow None; otherwise enforce digits/+/spaces/dashes and 7–15 digit count."""
         if v is None:
             return v
@@ -43,9 +42,16 @@ class BookingCreate(BaseModel):
     @classmethod
     def validate_date(cls, v: date) -> date:
         """Reject past dates."""
-        from datetime import date as date_type
-        if v < date_type.today():
+        if v < date.today():
             raise ValueError("date must not be in the past")
+        return v
+
+    @field_validator("time_slot")
+    @classmethod
+    def validate_time_slot(cls, v: str) -> str:
+        """Enforce HH:MM format for time_slot."""
+        if not re.match(r'^\d{2}:\d{2}$', v):
+            raise ValueError("time_slot must be in HH:MM format")
         return v
 
     @field_validator("party_size")

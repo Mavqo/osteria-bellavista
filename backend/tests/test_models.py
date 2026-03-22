@@ -114,6 +114,48 @@ def test_booking_create_phone_invalid_chars():
         )
 
 
+def test_booking_create_today_is_valid():
+    """Same-day bookings are allowed."""
+    from datetime import date
+    b = BookingCreate(
+        name="Test",
+        date=date.today(),
+        time_slot="20:00",
+        party_size=2,
+    )
+    assert b.date == date.today()
+
+
+def test_booking_create_invalid_time_slot_format():
+    with pytest.raises(ValidationError):
+        BookingCreate(
+            name="Test",
+            date=date.today() + timedelta(days=1),
+            time_slot="dinner",
+            party_size=2,
+        )
+
+
+def test_booking_create_name_whitespace_only():
+    with pytest.raises(ValidationError):
+        BookingCreate(
+            name="   ",
+            date=date.today() + timedelta(days=1),
+            time_slot="20:00",
+            party_size=2,
+        )
+
+
+def test_booking_create_name_empty():
+    with pytest.raises(ValidationError):
+        BookingCreate(
+            name="",
+            date=date.today() + timedelta(days=1),
+            time_slot="20:00",
+            party_size=2,
+        )
+
+
 # --- SlotsResponse ---
 
 def test_slots_response_with_slots():
