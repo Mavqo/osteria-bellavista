@@ -42,7 +42,12 @@ class BookingCreate(BaseModel):
     @classmethod
     def validate_date(cls, v: date) -> date:
         """Reject past dates."""
-        if v < date.today():
+        import os
+        from zoneinfo import ZoneInfo
+        from datetime import datetime as dt
+        tz = ZoneInfo(os.environ.get("RESTAURANT_TZ", "Europe/Rome"))
+        today_local = dt.now(tz).date()
+        if v < today_local:
             raise ValueError("date must not be in the past")
         return v
 

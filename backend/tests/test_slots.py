@@ -49,3 +49,14 @@ def test_get_slots_full_slot_not_returned(client, test_db):
     data = response.json()
     assert "12:00" not in data["slots"]
     assert data["date_available"] is True  # other slots still available
+
+
+def test_rate_limit_returns_429_after_threshold(client):
+    """GET /slots should return 429 after 30 requests per minute from same IP."""
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    # Exhaust the 30 req/min limit
+    for _ in range(30):
+        client.get(f"/slots?date={tomorrow}")
+    # 31st request should be rate limited
+    response = client.get(f"/slots?date={tomorrow}")
+    assert response.status_code == 429
