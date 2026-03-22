@@ -21,12 +21,20 @@ describe('MenuSection', () => {
   })
 })
 
-describe('Static sections', () => {
-  it('GallerySection renders gallery heading', () => {
+describe('GallerySection', () => {
+  it('renders section with accessible name', () => {
     render(<GallerySection />)
     expect(screen.getByRole('region', { name: /galleria/i })).toBeInTheDocument()
   })
+  it('renders 6 images with alt text', () => {
+    render(<GallerySection />)
+    const imgs = screen.getAllByRole('img')
+    expect(imgs).toHaveLength(6)
+    imgs.forEach(img => expect(img).toHaveAttribute('alt'))
+  })
+})
 
+describe('Static sections', () => {
   it('AboutSection renders address', () => {
     render(<AboutSection />)
     expect(screen.getByText(/Via Lago 12/)).toBeInTheDocument()
