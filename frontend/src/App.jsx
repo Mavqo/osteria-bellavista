@@ -1,5 +1,9 @@
 import React from 'react'
 import Hero from './components/Hero.jsx'
+import MenuSection from './components/MenuSection.jsx'
+import GallerySection from './components/GallerySection.jsx'
+import AboutSection from './components/AboutSection.jsx'
+import Footer from './components/Footer.jsx'
 
 function App() {
   return (
@@ -7,13 +11,13 @@ function App() {
       <Hero />
 
       <main>
-        <section id="menu" aria-label="Il menu" />
-        <section id="gallery" aria-label="Galleria" />
+        <MenuSection />
+        <GallerySection />
         <section id="booking" aria-label="Prenotazioni" />
-        <section id="about" aria-label="Chi siamo e contatti" />
+        <AboutSection />
       </main>
 
-      <footer id="footer" aria-label="Footer" />
+      <Footer />
     </>
   )
 }

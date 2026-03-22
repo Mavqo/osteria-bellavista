@@ -1,0 +1,41 @@
+.section {
+  background-color: var(--color-cream);
+  padding: var(--section-padding);
+}
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+.label { color: var(--color-terracotta); margin-bottom: 0.5rem; }
+.title {
+  font-family: var(--font-title);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  color: var(--color-dark);
+  margin-bottom: 1.5rem;
+}
+.text { color: #555; line-height: 1.8; }
+.info { display: flex; flex-direction: column; gap: 1.5rem; }
+.infoBlock h3 {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  color: var(--color-olive);
+  margin-bottom: 0.5rem;
+}
+.infoBlock p { font-size: 0.9rem; color: #555; line-height: 1.7; }
+.mapPlaceholder {
+  background-color: #e0dbd3;
+  border-radius: 8px;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+@media (max-width: 768px) {
+  .container { grid-template-columns: 1fr; gap: 2rem; }
+}
