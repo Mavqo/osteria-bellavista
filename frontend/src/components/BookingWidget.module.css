@@ -1,46 +1,67 @@
 .widget {
-  background: var(--color-white);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  max-width: 540px;
+  margin: 0 auto;
+  background-color: var(--color-cream);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
 }
-.steps {
+
+/* Progress bar header */
+.progressHeader {
+  padding: 2rem 2.5rem 1.5rem;
+  border-bottom: 1px solid rgba(139, 115, 85, 0.15);
+}
+
+.progressTrack {
+  height: 3px;
+  background-color: rgba(139, 115, 85, 0.2);
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--color-olive);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.progressLabels {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  align-items: center;
+  justify-content: space-between;
 }
-.stepDot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  flex: 1;
-  position: relative;
-}
-.stepDot:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 14px;
-  left: calc(50% + 14px);
-  right: calc(-50% + 14px);
-  height: 2px;
-  background: #e0e0e0;
-}
-.dotNum {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
+
+.stepLabel {
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #999;
+  letter-spacing: 0.05em;
+  color: rgba(139, 115, 85, 0.45);
+  transition: color 0.3s;
+  text-transform: uppercase;
 }
-.active .dotNum { background: var(--color-olive); color: white; }
-.done .dotNum { background: var(--color-olive); color: white; }
-.dotLabel { font-size: 0.65rem; color: #999; text-align: center; }
-.active .dotLabel, .done .dotLabel { color: var(--color-olive); }
-.content { min-height: 200px; }
+
+.stepLabel.active {
+  color: var(--color-olive);
+}
+
+.stepLabel.done {
+  color: var(--color-stone);
+}
+
+/* Step content area */
+.content {
+  padding: 2rem 2.5rem 2.5rem;
+  min-height: 280px;
+}
+
+@media (max-width: 600px) {
+  .progressHeader {
+    padding: 1.5rem;
+  }
+
+  .content {
+    padding: 1.5rem;
+  }
+}

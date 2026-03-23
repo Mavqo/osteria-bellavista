@@ -4,14 +4,13 @@ import BookingWidget from './BookingWidget.jsx'
 
 function BookingSection() {
   return (
-    <section id="booking" className={styles.section} aria-label="Prenotazioni">
-      <div className={styles.container}>
-        <p className="section-label" style={{ color: 'var(--color-olive)', marginBottom: '0.5rem' }}>
-          Prenota il tuo tavolo
-        </p>
-        <h2 className={styles.title}>Riserva il tuo posto<br />con un click.</h2>
-        <BookingWidget />
+    <section id="booking" className={styles.section} aria-label="Prenota un tavolo">
+      <div className={styles.header}>
+        <p className={`section-label ${styles.label}`}>Prenotazioni</p>
+        <h2 className={styles.title}>Prenota il tuo tavolo</h2>
+        <p className={styles.subtitle}>Disponibilità in tempo reale · Conferma immediata</p>
       </div>
+      <BookingWidget />
     </section>
   )
 }

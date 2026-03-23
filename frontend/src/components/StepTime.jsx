@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import styles from './StepForm.module.css'
+import formStyles from './StepForm.module.css'
 import { fetchSlots } from '../api/bookingApi.js'
 
 function StepTime({ date, value, onChange, onNext, onBack }) {
@@ -20,30 +20,49 @@ function StepTime({ date, value, onChange, onNext, onBack }) {
   }, [date])
 
   return (
-    <div className={styles.step}>
-      <h3 className={styles.stepTitle}>Scegli l&apos;orario</h3>
-      {loading && <p className={styles.muted}>Caricamento disponibilità...</p>}
-      {error && <p className={styles.error}>{error}</p>}
+    <div>
+      <h3 style={{ fontFamily: 'var(--font-title)', marginBottom: '1.25rem', fontSize: '1.3rem' }}>
+        Scegli l&apos;orario
+      </h3>
+      {loading && <p style={{ color: 'var(--color-stone)', fontSize: '0.9rem' }}>Caricamento disponibilità...</p>}
+      {error && <p className={formStyles.error}>{error}</p>}
       {!loading && !error && !available && (
-        <p className={styles.muted}>Nessuna disponibilità per questa data — prova con un&apos;altra.</p>
+        <p style={{ color: 'var(--color-stone)', fontSize: '0.9rem' }}>
+          Nessuna disponibilità per questa data — prova con un&apos;altra.
+        </p>
       )}
       {!loading && !error && available && (
-        <div className={styles.slotGrid} role="group" aria-label="Orari disponibili">
+        <div
+          style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}
+          role="group"
+          aria-label="Orari disponibili"
+        >
           {slots.map(slot => (
             <button
               key={slot}
-              className={`${styles.slotBtn} ${value === slot ? styles.slotSelected : ''}`}
               onClick={() => onChange(slot)}
               aria-pressed={value === slot}
+              style={{
+                padding: '0.5rem 1rem',
+                border: value === slot ? '2px solid var(--color-olive)' : '2px solid var(--color-sand)',
+                borderRadius: '6px',
+                background: value === slot ? 'var(--color-olive)' : 'var(--color-white)',
+                color: value === slot ? 'var(--color-white)' : 'var(--color-dark)',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontFamily: 'var(--font-body)',
+                fontWeight: value === slot ? 600 : 400,
+                transition: 'all 0.15s',
+              }}
             >
               {slot}
             </button>
           ))}
         </div>
       )}
-      <div className={styles.nav}>
-        <button className={styles.btnSecondary} onClick={onBack}>← Indietro</button>
-        <button className={styles.btn} disabled={!value} onClick={onNext}>Avanti →</button>
+      <div className={formStyles.actions}>
+        <button className={formStyles.btnBack} onClick={onBack}>← Indietro</button>
+        <button className={formStyles.btnNext} disabled={!value} onClick={onNext}>Avanti →</button>
       </div>
     </div>
   )
