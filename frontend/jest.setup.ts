@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import React from 'react';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
@@ -24,24 +25,24 @@ jest.mock('next/navigation', () => ({
 // Mock next/head
 jest.mock('next/head', () => {
   return function Head({ children }: { children: React.ReactNode }) {
-    return children;
+    return React.createElement(React.Fragment, null, children);
   };
 });
 
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
-    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
-    section: ({ children, ...props }: any) => <section {...props}>{children}</section>,
-    article: ({ children, ...props }: any) => <article {...props}>{children}</article>,
-    img: ({ children, ...props }: any) => <img {...props}>{children}</img>,
-    a: ({ children, ...props }: any) => <a {...props}>{children}</a>,
-    ul: ({ children, ...props }: any) => <ul {...props}>{children}</ul>,
-    li: ({ children, ...props }: any) => <li {...props}>{children}</li>,
+    div: ({ children, ...props }: any) => React.createElement('div', props, children),
+    span: ({ children, ...props }: any) => React.createElement('span', props, children),
+    button: ({ children, ...props }: any) => React.createElement('button', props, children),
+    section: ({ children, ...props }: any) => React.createElement('section', props, children),
+    article: ({ children, ...props }: any) => React.createElement('article', props, children),
+    img: ({ children, ...props }: any) => React.createElement('img', props, children),
+    a: ({ children, ...props }: any) => React.createElement('a', props, children),
+    ul: ({ children, ...props }: any) => React.createElement('ul', props, children),
+    li: ({ children, ...props }: any) => React.createElement('li', props, children),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
 }));
 
 // Mock IntersectionObserver

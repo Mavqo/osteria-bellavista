@@ -1,6 +1,8 @@
+from __future__ import annotations
 from datetime import date
 from enum import Enum
 import re
+from typing import List, Optional, Union
 from pydantic import BaseModel, EmailStr, field_validator
 
 
@@ -8,10 +10,23 @@ class BookingCreate(BaseModel):
     """Input model for creating a booking."""
 
     name: str
-    phone: str | None = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
     date: date
     time_slot: str
     party_size: int
+    table_preference: str = "nessuna"
+    notes: Optional[str] = None
+    
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        """Validate email format if provided."""
+        if v is None or v == "":
+            return None
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("invalid email format")
+        return v
 
     @field_validator("name")
     @classmethod
@@ -26,7 +41,7 @@ class BookingCreate(BaseModel):
 
     @field_validator("phone")
     @classmethod
-    def validate_phone(cls, v: str | None) -> str | None:
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
         """Allow None; otherwise enforce digits/+/spaces/dashes and 7–15 digit count."""
         if v is None:
             return v
@@ -73,7 +88,7 @@ class SlotsResponse(BaseModel):
     """Response model for GET /slots."""
 
     date_available: bool
-    slots: list[str]
+    slots: List[str]
 
 
 class BookingResponse(BaseModel):
@@ -81,9 +96,12 @@ class BookingResponse(BaseModel):
 
     id: int
     name: str
+    email: Optional[str] = None
     date: str
     time_slot: str
     party_size: int
+    table_preference: str = "nessuna"
+    notes: Optional[str] = None
     status: str
 
 
@@ -102,10 +120,10 @@ class MenuCategory(str, Enum):
 class MenuItemBase(BaseModel):
     """Base model for menu items."""
     name: str
-    description: str | None = None
+    description: Optional[str] = None
     price: float
     category: MenuCategory
-    image_url: str | None = None
+    image_url: Optional[str] = None
     is_available: bool = True
 
     @field_validator("name")
@@ -121,7 +139,7 @@ class MenuItemBase(BaseModel):
 
     @field_validator("description")
     @classmethod
-    def validate_description(cls, v: str | None) -> str | None:
+    def validate_description(cls, v: Optional[str]) -> Optional[str]:
         """Enforce max 500 characters if provided."""
         if v is not None:
             v = v.strip()
@@ -149,12 +167,12 @@ class MenuItemCreate(MenuItemBase):
 class MenuItemResponse(MenuItemBase):
     """Response model for a menu item."""
     id: int
-    created_at: str | None = None
+    created_at: Optional[str] = None
 
 
 class MenuCategoryResponse(BaseModel):
     """Response model for menu categories."""
-    categories: list[dict]
+    categories: List[dict]
 
 
 # --- Contact Form Models ---
@@ -208,7 +226,7 @@ class ContactFormResponse(BaseModel):
     subject: str
     message: str
     status: str
-    created_at: str | None = None
+    created_at: Optional[str] = None
 
 
 # --- Authentication Models ---

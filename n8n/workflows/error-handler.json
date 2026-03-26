@@ -1,0 +1,243 @@
+{
+  "name": "Osteria Error Handler & Retry",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-webhook",
+      "name": "Error Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "error-handler",
+      "path": "error-handler",
+      "responseMode": "onReceived",
+      "options": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract error details from webhook\nconst errorData = {\n  workflow: $json.body.workflow || 'unknown',\n  error: $json.body.error || 'Unknown error',\n  timestamp: new Date().toISOString(),\n  retryCount: $json.body.retryCount || 0,\n  originalData: $json.body.originalData || {},\n  executionId: $json.body.executionId || null\n};\n\n// Determine if we should retry\nconst maxRetries = 3;\nconst shouldRetry = errorData.retryCount < maxRetries;\n\nreturn [{\n  json: {\n    ...errorData,\n    shouldRetry,\n    nextRetryDelay: shouldRetry ? Math.pow(2, errorData.retryCount) * 1000 : null\n  }\n}];"
+      },
+      "id": "process-error",
+      "name": "Process Error Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-retry",
+              "leftValue": "={{ $json.shouldRetry }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "eq"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-retry",
+      "name": "Should Retry?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.nextRetryDelay }}",
+        "unit": "milliseconds"
+      },
+      "id": "wait-retry",
+      "name": "Wait Before Retry",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "webhookId": "wait-retry"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_API_URL }}/webhooks/retry",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "workflow",
+              "value": "={{ $json.workflow }}"
+            },
+            {
+              "name": "originalData",
+              "value": "={{ JSON.stringify($json.originalData) }}"
+            },
+            {
+              "name": "retryCount",
+              "value": "={{ $json.retryCount + 1 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger-retry",
+      "name": "Trigger Retry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "content": "=# ⚠️ Workflow Error (Max Retries Exceeded)\n\n**Workflow:** {{ $json.workflow }}\n\n**Error:** {{ $json.error }}\n\n**Retry Count:** {{ $json.retryCount }}\n\n**Timestamp:** {{ $json.timestamp }}\n\n**Original Data:**\n```json\n{{ JSON.stringify($json.originalData, null, 2) }}\n```",
+        "options": {}
+      },
+      "id": "slack-error",
+      "name": "Alert Slack Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [850, 400],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "🚨 Osteria Automation Error - Manual Intervention Required",
+        "text": "=An automation workflow has failed after maximum retries and requires manual intervention.\n\nWorkflow: {{ $json.workflow }}\nError: {{ $json.error }}\nRetry Count: {{ $json.retryCount }}\nTimestamp: {{ $json.timestamp }}\n\nOriginal Data:\n{{ JSON.stringify($json.originalData, null, 2) }}\n\n---\nPlease check the n8n execution logs for more details.",
+        "options": {}
+      },
+      "id": "email-admin",
+      "name": "Email Admin",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1050, 400],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {},
+        "prompt": "=Analyze this error from a restaurant automation system and suggest troubleshooting steps:\n\nWorkflow: {{ $json.workflow }}\nError: {{ $json.error }}\nRetry Count: {{ $json.retryCount }}\n\nProvide:\n1. Likely cause of the error\n2. Suggested troubleshooting steps\n3. Whether this needs immediate attention\n\nRespond concisely in English.",
+        "jsonOutput": false
+      },
+      "id": "llm-error-analysis",
+      "name": "LLM Error Analysis",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.8,
+      "position": [1250, 400],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "8",
+      "name": "error-handling"
+    },
+    {
+      "id": "9",
+      "name": "retry"
+    }
+  ],
+  "connections": {
+    "Error Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Error Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Error Data": {
+      "main": [
+        [
+          {
+            "node": "Should Retry?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Retry?": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Retry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Slack Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Retry": {
+      "main": [
+        [
+          {
+            "node": "Trigger Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Slack Error": {
+      "main": [
+        [
+          {
+            "node": "Email Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Admin": {
+      "main": [
+        [
+          {
+            "node": "LLM Error Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

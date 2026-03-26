@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,7 +8,8 @@ import { restaurantInfo } from "@/lib/data";
 import { MaskReveal } from "@/components/text-reveal";
 import { MagneticButton } from "@/components/magnetic-button";
 import { useI18n } from "@/lib/i18n";
-import { CalendarIcon, Clock, Users, Sparkles, MapPin, Check, ArrowRight, Sun, Wine, Trees, Sparkles as SparklesIcon } from "lucide-react";
+import { bookingsApi, BookingRequest, ApiRequestError } from "@/lib/api";
+import { CalendarIcon, Clock, Users, Sparkles, MapPin, Check, ArrowRight, Sun, Wine, Trees, Sparkles as SparklesIcon, AlertCircle } from "lucide-react";
 
 const timeSlots = [
   "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -32,11 +33,99 @@ export function BookingSection() {
   const [preference, setPreference] = useState<string>("nessuna");
   const [step, setStep] = useState<1 | 2>(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<string[]>(timeSlots);
+  const [isCheckingSlots, setIsCheckingSlots] = useState(false);
+
+  // Form fields for step 2
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
 
   const canProceed = date && time && guests;
+  const canSubmit = name.trim() && phone.trim();
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  // Check available slots when date changes
+  useEffect(() => {
+    if (date) {
+      checkAvailableSlots(date);
+    }
+  }, [date]);
+
+  const checkAvailableSlots = async (selectedDate: Date) => {
+    setIsCheckingSlots(true);
+    setTime(undefined); // Reset selected time
+    
+    try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const response = await bookingsApi.getSlots(dateStr);
+      setAvailableSlots(response.slots);
+    } catch (err) {
+      console.error("Failed to fetch slots:", err);
+      // Fall back to all time slots on error
+      setAvailableSlots(timeSlots);
+    } finally {
+      setIsCheckingSlots(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!canSubmit || !date || !time) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const bookingData: BookingRequest = {
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
+        date: date.toISOString().split('T')[0],
+        time_slot: time,
+        party_size: guests,
+        table_preference: preference,
+        notes: notes.trim() || undefined,
+      };
+
+      await bookingsApi.createBooking(bookingData);
+      setIsSubmitted(true);
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        // Handle specific error codes
+        if (err.statusCode === 409) {
+          setError(t("booking.errors.slotFull") as string || "This time slot is no longer available. Please select another time.");
+        } else if (err.statusCode === 422) {
+          setError(t("booking.errors.invalidData") as string || "Please check your booking details and try again.");
+        } else if (err.statusCode === 429) {
+          setError(t("booking.errors.rateLimit") as string || "Too many requests. Please wait a moment and try again.");
+        } else {
+          setError(t("booking.errors.generic") as string || "Something went wrong. Please try again.");
+        }
+      } else {
+        setError(t("booking.errors.network") as string || "Network error. Please check your connection.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setStep(1);
+    setError(null);
+  };
+
+  const handleNewBooking = () => {
+    setIsSubmitted(false);
+    setStep(1);
+    setDate(undefined);
+    setTime(undefined);
+    setName("");
+    setEmail("");
+    setPhone("");
+    setNotes("");
+    setError(null);
   };
 
   return (
@@ -99,6 +188,24 @@ export function BookingSection() {
                   </div>
                 </div>
 
+                {/* Error Display */}
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3"
+                    >
+                      <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-red-700 text-sm font-medium">{(t("booking.errorTitle") as string) || "Booking Error"}</p>
+                        <p className="text-red-600 text-sm">{error}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <AnimatePresence mode="wait">
                   {step === 1 ? (
                     <motion.div
@@ -130,21 +237,31 @@ export function BookingSection() {
                           <h3 className="text-foreground font-medium mb-4 flex items-center gap-2">
                             <Clock className="w-4 h-4 text-accent" />
                             {(t("booking.time") as string)}
+                            {isCheckingSlots && (
+                              <span className="text-xs text-muted-foreground ml-2">({t("booking.checking") as string || "Checking..."})</span>
+                            )}
                           </h3>
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                            {timeSlots.map((slot) => (
-                              <button
-                                key={slot}
-                                onClick={() => setTime(slot)}
-                                className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
-                                  time === slot
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-muted text-foreground hover:bg-primary/10"
-                                }`}
-                              >
-                                {slot}
-                              </button>
-                            ))}
+                            {timeSlots.map((slot) => {
+                              const isAvailable = availableSlots.includes(slot);
+                              return (
+                                <button
+                                  key={slot}
+                                  onClick={() => isAvailable && setTime(slot)}
+                                  disabled={!isAvailable || isCheckingSlots}
+                                  className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                                    time === slot
+                                      ? "bg-primary text-primary-foreground"
+                                      : isAvailable
+                                      ? "bg-muted text-foreground hover:bg-primary/10"
+                                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  }`}
+                                  title={!isAvailable ? t("booking.slotUnavailable") as string || "Not available" : undefined}
+                                >
+                                  {slot}
+                                </button>
+                              );
+                            })}
                           </div>
 
                           <div className="mt-8">
@@ -256,20 +373,30 @@ export function BookingSection() {
                           <input
                             type="text"
                             placeholder={t("booking.form.name") as string}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:border-primary focus:outline-none transition-colors"
+                            required
                           />
                           <input
                             type="email"
                             placeholder={t("booking.form.email") as string}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:border-primary focus:outline-none transition-colors"
                           />
                           <input
                             type="tel"
                             placeholder={t("booking.form.phone") as string}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:border-primary focus:outline-none transition-colors"
+                            required
                           />
                           <textarea
                             placeholder={t("booking.form.notes") as string}
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
                             rows={3}
                             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:border-primary focus:outline-none transition-colors resize-none"
                           />
@@ -278,16 +405,25 @@ export function BookingSection() {
 
                       <div className="flex gap-3">
                         <button
-                          onClick={() => setStep(1)}
-                          className="flex-1 border border-border hover:border-primary text-foreground rounded-full py-4 font-medium transition-colors"
+                          onClick={handleBack}
+                          disabled={isLoading}
+                          className="flex-1 border border-border hover:border-primary text-foreground rounded-full py-4 font-medium transition-colors disabled:opacity-50"
                         >
                           {(t("booking.actions.back") as string)}
                         </button>
                         <button
                           onClick={handleSubmit}
-                          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-4 font-medium transition-colors"
+                          disabled={!canSubmit || isLoading}
+                          className="flex-1 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-full py-4 font-medium transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                          {(t("booking.actions.confirm") as string)}
+                          {isLoading ? (
+                            <>
+                              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              {(t("booking.actions.processing") as string) || "Processing..."}
+                            </>
+                          ) : (
+                            (t("booking.actions.confirm") as string)
+                          )}
                         </button>
                       </div>
                     </motion.div>
@@ -319,12 +455,7 @@ export function BookingSection() {
                 {(t("booking.success.message") as string)}
               </p>
               <button
-                onClick={() => {
-                  setIsSubmitted(false);
-                  setStep(1);
-                  setDate(undefined);
-                  setTime(undefined);
-                }}
+                onClick={handleNewBooking}
                 className="border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-full px-8 py-3 font-medium transition-colors"
               >
                 {(t("booking.actions.new") as string)}

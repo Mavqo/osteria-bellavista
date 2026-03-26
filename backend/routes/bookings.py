@@ -32,11 +32,20 @@ def create_booking(request: Request, booking: BookingCreate, background_tasks: B
         if count >= slot["max_bookings"]:
             raise HTTPException(status_code=409, detail="slot is fully booked")
 
-        # Insert booking
+        # Insert booking with new fields
         cursor = conn.execute(
-            "INSERT INTO bookings (name, phone, date, time_slot, party_size, status) "
-            "VALUES (?, ?, ?, ?, ?, 'confirmed')",
-            (booking.name, booking.phone, booking.date.isoformat(), booking.time_slot, booking.party_size),
+            "INSERT INTO bookings (name, phone, email, date, time_slot, party_size, table_preference, notes, status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')",
+            (
+                booking.name,
+                booking.phone,
+                booking.email,
+                booking.date.isoformat(),
+                booking.time_slot,
+                booking.party_size,
+                booking.table_preference,
+                booking.notes,
+            ),
         )
         booking_id = cursor.lastrowid
 
@@ -44,12 +53,56 @@ def create_booking(request: Request, booking: BookingCreate, background_tasks: B
         "id": booking_id,
         "name": booking.name,
         "phone": booking.phone,
+        "email": booking.email,
         "date": booking.date.isoformat(),
         "time_slot": booking.time_slot,
         "party_size": booking.party_size,
+        "table_preference": booking.table_preference,
+        "notes": booking.notes,
         "status": "confirmed",
     }
 
     background_tasks.add_task(send_notification, booking_dict)
 
     return BookingResponse(**booking_dict)
+
+
+@router.get("/bookings/today", status_code=200)
+@limiter.limit("10/minute")
+def get_today_bookings(request: Request):
+    """Get all bookings for today (for n8n automation)."""
+    from datetime import datetime
+    import os
+    from zoneinfo import ZoneInfo
+    
+    tz = ZoneInfo(os.environ.get("RESTAURANT_TZ", "Europe/Rome"))
+    today = datetime.now(tz).date().isoformat()
+    
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT id, name, email, phone, date, time_slot, party_size, table_preference, notes, status "
+            "FROM bookings WHERE date = ? AND status = 'confirmed' ORDER BY time_slot",
+            (today,),
+        ).fetchall()
+        
+        bookings = [
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "email": row["email"],
+                "phone": row["phone"],
+                "date": row["date"],
+                "time_slot": row["time_slot"],
+                "party_size": row["party_size"],
+                "table_preference": row["table_preference"],
+                "notes": row["notes"],
+                "status": row["status"],
+            }
+            for row in rows
+        ]
+    
+    return {
+        "date": today,
+        "count": len(bookings),
+        "bookings": bookings
+    }

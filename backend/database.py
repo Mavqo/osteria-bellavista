@@ -36,9 +36,12 @@ def init_db() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 phone TEXT,
+                email TEXT,
                 date DATE NOT NULL,
                 time_slot TEXT NOT NULL,
                 party_size INTEGER NOT NULL,
+                table_preference TEXT DEFAULT 'nessuna',
+                notes TEXT,
                 status TEXT NOT NULL DEFAULT 'confirmed',
                 created_at DATETIME DEFAULT (datetime('now'))
             )
@@ -70,8 +73,11 @@ def init_db() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT NOT NULL,
-                subject TEXT NOT NULL,
+                phone TEXT,
+                subject TEXT,
                 message TEXT NOT NULL,
+                category TEXT,
+                priority TEXT DEFAULT 'medium',
                 status TEXT NOT NULL DEFAULT 'new',
                 created_at DATETIME DEFAULT (datetime('now'))
             )

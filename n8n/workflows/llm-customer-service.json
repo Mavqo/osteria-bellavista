@@ -1,0 +1,198 @@
+{
+  "name": "Osteria LLM Customer Service",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.BACKEND_API_URL }}/bookings/today",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "fetch-today-bookings",
+      "name": "Fetch Today's Bookings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {},
+        "prompt": "=As a restaurant AI assistant, analyze today's bookings and provide insights:\n\nBookings: {{ JSON.stringify($json) }}\n\nProvide:\n1. Total number of bookings\n2. Peak hours analysis\n3. Any VIP or large party alerts (party_size >= 6)\n4. Suggested preparation notes for the staff\n\nRespond in Italian, formatted for Slack notification.",
+        "jsonOutput": false
+      },
+      "id": "llm-analyze",
+      "name": "LLM Analyze Bookings",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.8,
+      "position": [650, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "daily-summary",
+      "name": "Daily Summary to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [850, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "booking-notification-webhook",
+      "name": "Booking Notification",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 500],
+      "webhookId": "booking-notification",
+      "path": "booking-notification",
+      "responseMode": "onReceived",
+      "options": {}
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022",
+        "options": {},
+        "prompt": "=Generate a personalized confirmation message for a restaurant booking:\n\nCustomer: {{ $json.body.name }}\nDate: {{ $json.body.date }}\nTime: {{ $json.body.time_slot }}\nParty Size: {{ $json.body.party_size }}\n\nThe restaurant is Osteria Bellavista in Lugano, an elegant Italian restaurant.\nWrite a warm, professional confirmation in Italian that:\n1. Confirms the booking details\n2. Mentions any special requests\n3. Provides polite reminders (arrive on time, call for changes)\n4. Ends with a warm welcome\n\nKeep it concise but personable.",
+        "jsonOutput": false
+      },
+      "id": "llm-confirmation",
+      "name": "LLM Generate Confirmation",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1,
+      "position": [450, 500],
+      "credentials": {
+        "anthropicApi": {
+          "id": "ANTHROPIC_CREDENTIAL_ID",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $json.body.email }}",
+        "subject": "Conferma Prenotazione - Osteria Bellavista",
+        "text": "={{ $json.message }}",
+        "options": {}
+      },
+      "id": "send-confirmation",
+      "name": "Send Customer Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [650, 500],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "5",
+      "name": "llm"
+    },
+    {
+      "id": "6",
+      "name": "automation"
+    },
+    {
+      "id": "7",
+      "name": "ai"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Today's Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Today's Bookings": {
+      "main": [
+        [
+          {
+            "node": "LLM Analyze Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Analyze Bookings": {
+      "main": [
+        [
+          {
+            "node": "Daily Summary to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Notification": {
+      "main": [
+        [
+          {
+            "node": "LLM Generate Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Generate Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Send Customer Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

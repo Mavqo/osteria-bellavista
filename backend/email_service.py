@@ -1,12 +1,14 @@
+from __future__ import annotations
 import os
 import logging
 import smtplib
+from typing import Optional
 from email.message import EmailMessage
 
 logger = logging.getLogger(__name__)
 
 
-def _get_smtp_config() -> dict | None:
+def _get_smtp_config() -> Optional[dict]:
     """Get SMTP configuration from environment. Returns None if not configured."""
     restaurant_email = os.environ.get("RESTAURANT_EMAIL")
     smtp_host = os.environ.get("SMTP_HOST")

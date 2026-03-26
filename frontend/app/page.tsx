@@ -4,6 +4,7 @@ import { MenuSection } from "@/components/sections/menu-section";
 import { ExperiencesSection } from "@/components/sections/experiences-section";
 import { GallerySection } from "@/components/sections/gallery-section";
 import { BookingSection } from "@/components/sections/booking-section";
+import { ContactSection } from "@/components/sections/contact-section";
 import { Footer } from "@/components/sections/footer";
 import { RestaurantSchema } from "@/components/seo/restaurant-schema";
 
@@ -18,6 +19,7 @@ export default function Home() {
         <ExperiencesSection />
         <GallerySection />
         <BookingSection />
+        <ContactSection />
       </main>
       <Footer />
     </>
