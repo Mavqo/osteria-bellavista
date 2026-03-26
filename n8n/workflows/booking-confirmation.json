@@ -1,0 +1,320 @@
+{
+  "name": "Osteria Booking Confirmation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-trigger",
+      "name": "Booking Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "booking-webhook",
+      "path": "booking-webhook",
+      "responseMode": "responseNode",
+      "options": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validate-required",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "validate-phone",
+              "leftValue": "={{ $json.body.phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "validate-date",
+              "leftValue": "={{ $json.body.date }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "validate-slot",
+              "leftValue": "={{ $json.body.time_slot }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "validate-input",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"error\": \"Missing required fields: name, phone, date, time_slot\"}",
+        "options": {
+          "statusCode": 400
+        }
+      },
+      "id": "validation-error",
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_API_URL }}/bookings",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.body.name }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.body.phone }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.body.date }}"
+            },
+            {
+              "name": "time_slot",
+              "value": "={{ $json.body.time_slot }}"
+            },
+            {
+              "name": "party_size",
+              "value": "={{ $json.body.party_size || 2 }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "name": "notes",
+              "value": "={{ $json.body.notes }}"
+            },
+            {
+              "name": "table_preference",
+              "value": "={{ $json.body.table_preference }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-booking",
+      "name": "Create Booking API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-status",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": 201,
+              "operator": {
+                "type": "number",
+                "operation": "eq"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-success",
+      "name": "Booking Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "statusCode": 201
+        }
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"error\": \"Booking failed\", \"details\": \"{{ $json.message || 'Unknown error' }}\"}",
+        "options": {
+          "statusCode": "={{ $json.status || 500 }}"
+        }
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "content": "=# 🍽️ New Booking Confirmed\n\n**Customer:** {{ $('Create Booking API').item.json.body.name }}\n\n**Phone:** {{ $('Create Booking API').item.json.body.phone }}\n\n**Date:** {{ $('Create Booking API').item.json.body.date }}\n\n**Time:** {{ $('Create Booking API').item.json.body.time_slot }}\n\n**Party Size:** {{ $('Create Booking API').item.json.body.party_size }}\n\n**Status:** {{ $('Create Booking API').item.json.body.status }}",
+        "options": {}
+      },
+      "id": "slack-notification",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1250, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $env.RESTAURANT_EMAIL }}",
+        "subject": "Nuova prenotazione - {{ $('Create Booking API').item.json.body.date }} alle {{ $('Create Booking API').item.json.body.time_slot }}",
+        "text": "=Gentile Staff,\n\nE' stata ricevuta una nuova prenotazione:\n\nNome: {{ $('Create Booking API').item.json.body.name }}\nTelefono: {{ $('Create Booking API').item.json.body.phone }}\nEmail: {{ $('Create Booking API').item.json.body.email || 'non fornita' }}\nData: {{ $('Create Booking API').item.json.body.date }}\nOrario: {{ $('Create Booking API').item.json.body.time_slot }}\nCoperti: {{ $('Create Booking API').item.json.body.party_size }}\nNote: {{ $('Create Booking API').item.json.body.notes || 'nessuna' }}\n\nBuon lavoro!\nSistema di Prenotazione Osteria Bellavista",
+        "options": {}
+      },
+      "id": "email-notification",
+      "name": "Email Restaurant",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1450, 200],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "1",
+      "name": "booking"
+    },
+    {
+      "id": "2",
+      "name": "restaurant"
+    }
+  ],
+  "connections": {
+    "Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Create Booking API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Booking API": {
+      "main": [
+        [
+          {
+            "node": "Booking Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Success?": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Email Restaurant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "name": "Osteria Contact Form Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "contact-webhook",
+      "name": "Contact Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "contact-webhook",
+      "path": "contact-webhook",
+      "responseMode": "responseNode",
+      "options": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validate-name",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "validate-email",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty",
+                "value": ""
+              }
+            },
+            {
+              "id": "validate-message",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "validate-contact",
+      "name": "Validate Contact",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"error\": \"Missing required fields: name, email, message\"}",
+        "options": {
+          "statusCode": 400
+        }
+      },
+      "id": "contact-validation-error",
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"message\": \"Message received. We'll get back to you soon!\"}",
+        "options": {
+          "statusCode": 200
+        }
+      },
+      "id": "contact-success",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $env.RESTAURANT_EMAIL }}",
+        "subject": "Nuovo messaggio dal sito - {{ $json.body.name }}",
+        "text": "=Hai ricevuto un nuovo messaggio dal form di contatto:\n\nNome: {{ $json.body.name }}\nEmail: {{ $json.body.email }}\nTelefono: {{ $json.body.phone || 'non fornito' }}\n\nMessaggio:\n{{ $json.body.message }}\n\n---\nInviato il: {{ new Date().toLocaleString('it-IT') }}",
+        "options": {}
+      },
+      "id": "email-contact",
+      "name": "Email Restaurant",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [850, 200],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "=# 📧 New Contact Form Submission\n\n**From:** {{ $json.body.name }} ({{ $json.body.email }})\n\n**Message:**\n{{ $json.body.message }}",
+        "options": {}
+      },
+      "id": "slack-contact",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [650, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {},
+        "prompt": "=Analyze this customer inquiry for a restaurant and categorize it:\n\nName: {{ $json.body.name }}\nMessage: {{ $json.body.message }}\n\nProvide a JSON response with:\n- category: one of [reservation, menu_inquiry, private_event, complaint, general]\n- priority: one of [low, medium, high, urgent]\n- summary: brief summary in Italian\n- suggested_response: brief suggested reply in Italian",
+        "jsonOutput": true
+      },
+      "id": "llm-classify",
+      "name": "LLM Classify Inquiry",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.8,
+      "position": [650, 400],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store classified inquiry data\nconst inquiry = {\n  name: $('Contact Webhook').item.json.body.name,\n  email: $('Contact Webhook').item.json.body.email,\n  phone: $('Contact Webhook').item.json.body.phone || null,\n  message: $('Contact Webhook').item.json.body.message,\n  category: $json.category || 'general',\n  priority: $json.priority || 'medium',\n  summary: $json.summary || '',\n  received_at: new Date().toISOString()\n};\n\nreturn [inquiry];"
+      },
+      "id": "store-inquiry",
+      "name": "Store Inquiry Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 400]
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "3",
+      "name": "contact"
+    },
+    {
+      "id": "4",
+      "name": "llm"
+    }
+  ],
+  "connections": {
+    "Contact Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Contact": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LLM Classify Inquiry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Email Restaurant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Restaurant": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Classify Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Store Inquiry Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
