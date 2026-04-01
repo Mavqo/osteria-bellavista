@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 
@@ -50,6 +51,25 @@ app.include_router(webhooks_router)
 app.include_router(menu_router)
 app.include_router(contact_router)
 app.include_router(auth_router)
+
+
+@app.get("/")
+def root():
+    """Root endpoint with API info."""
+    return {
+        "name": "Osteria Bellavista API",
+        "version": "1.0.0",
+        "description": "Restaurant booking system, menu gallery, and contact form API",
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs",
+            "menu": "/menu",
+            "bookings": "/bookings",
+            "slots": "/slots",
+            "contact": "/contact"
+        },
+        "status": "operational"
+    }
 
 
 @app.get("/health")
