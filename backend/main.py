@@ -62,7 +62,7 @@ def health():
 
 
 # Static files - serve frontend build (only if dist exists)
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+STATIC_DIR = "/app/frontend/dist"
 if os.path.exists(STATIC_DIR):
     app.mount("/_next", StaticFiles(directory=os.path.join(STATIC_DIR, "_next")), name="next-static")
     app.mount("/images", StaticFiles(directory=os.path.join(STATIC_DIR, "images")), name="images")
