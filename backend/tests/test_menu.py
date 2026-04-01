@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Tests for menu gallery endpoints."""
 import pytest
 from fastapi.testclient import TestClient

@@ -8,7 +8,7 @@ import { restaurantInfo } from "@/lib/data";
 import { MaskReveal } from "@/components/text-reveal";
 import { MagneticButton } from "@/components/magnetic-button";
 import { useI18n } from "@/lib/i18n";
-import { bookingsApi, BookingRequest, ApiRequestError } from "@/lib/api";
+import { getAvailableSlots, createBooking, BookingData, BookingApiError } from "@/lib/api";
 import { CalendarIcon, Clock, Users, Sparkles, MapPin, Check, ArrowRight, Sun, Wine, Trees, Sparkles as SparklesIcon, AlertCircle } from "lucide-react";
 
 const timeSlots = [
@@ -60,7 +60,7 @@ export function BookingSection() {
     
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
-      const response = await bookingsApi.getSlots(dateStr);
+      const response = await getAvailableSlots(dateStr);
       setAvailableSlots(response.slots);
     } catch (err) {
       console.error("Failed to fetch slots:", err);
@@ -78,7 +78,7 @@ export function BookingSection() {
     setError(null);
 
     try {
-      const bookingData: BookingRequest = {
+      const bookingData: BookingData = {
         name: name.trim(),
         phone: phone.trim(),
         email: email.trim() || undefined,
@@ -89,10 +89,10 @@ export function BookingSection() {
         notes: notes.trim() || undefined,
       };
 
-      await bookingsApi.createBooking(bookingData);
+      await createBooking(bookingData);
       setIsSubmitted(true);
     } catch (err) {
-      if (err instanceof ApiRequestError) {
+      if (err instanceof BookingApiError) {
         // Handle specific error codes
         if (err.statusCode === 409) {
           setError(t("booking.errors.slotFull") as string || "This time slot is no longer available. Please select another time.");

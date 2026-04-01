@@ -11,9 +11,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export interface BookingData {
   name: string;
   phone?: string;
+  email?: string;
   date: string; // YYYY-MM-DD format
   time_slot: string; // HH:MM format
   party_size: number;
+  table_preference?: string;
+  notes?: string;
 }
 
 /**

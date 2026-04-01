@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Tests for JWT authentication endpoints."""
 import pytest
 

@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -44,7 +46,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
-# Routes
+# API Routes
 app.include_router(slots_router)
 app.include_router(bookings_router)
 app.include_router(webhooks_router)
@@ -53,26 +55,45 @@ app.include_router(contact_router)
 app.include_router(auth_router)
 
 
-@app.get("/")
-def root():
-    """Root endpoint with API info."""
-    return {
-        "name": "Osteria Bellavista API",
-        "version": "1.0.0",
-        "description": "Restaurant booking system, menu gallery, and contact form API",
-        "endpoints": {
-            "health": "/health",
-            "docs": "/docs",
-            "menu": "/menu",
-            "bookings": "/bookings",
-            "slots": "/slots",
-            "contact": "/contact"
-        },
-        "status": "operational"
-    }
-
-
 @app.get("/health")
 def health():
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+# Static files - serve frontend build
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if os.path.exists(STATIC_DIR):
+    app.mount("/_next", StaticFiles(directory=os.path.join(STATIC_DIR, "_next")), name="next-static")
+    app.mount("/images", StaticFiles(directory=os.path.join(STATIC_DIR, "images")), name="images")
+    
+    @app.get("/")
+    async def serve_root():
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    
+    @app.get("/{path:path}")
+    async def serve_spa(path: str):
+        # Serve static files if they exist
+        file_path = os.path.join(STATIC_DIR, path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise serve index.html for SPA routing
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+else:
+    @app.get("/")
+    def root():
+        """Root endpoint with API info."""
+        return {
+            "name": "Osteria Bellavista API",
+            "version": "1.0.0",
+            "description": "Restaurant booking system, menu gallery, and contact form API",
+            "endpoints": {
+                "health": "/health",
+                "docs": "/docs",
+                "menu": "/menu",
+                "bookings": "/bookings",
+                "slots": "/slots",
+                "contact": "/contact"
+            },
+            "status": "operational"
+        }
