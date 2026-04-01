@@ -1,5 +1,5 @@
-from __future__ import annotations
 import os
+import glob
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -61,15 +61,40 @@ def health():
     return {"status": "ok"}
 
 
-# Static files - serve frontend build (only if dist exists)
+# Debug: lista file nel filesystem
+@app.get("/debug/files")
+def debug_files():
+    """Debug endpoint to check filesystem."""
+    result = {"cwd": os.getcwd(), "files": {}}
+    for root, dirs, files in os.walk("/app"):
+        level = root.replace("/app", "").count(os.sep)
+        indent = " " * 2 * level
+        result["files"][root] = files[:20]  # max 20 files per dir
+        if level > 2:  # limit depth
+            break
+    return result
+
+
+# Static files - serve frontend build
 STATIC_DIR = "/app/frontend/dist"
+print(f"DEBUG: Checking STATIC_DIR: {STATIC_DIR}")
+print(f"DEBUG: Exists: {os.path.exists(STATIC_DIR)}")
+
 if os.path.exists(STATIC_DIR):
+    print(f"DEBUG: STATIC_DIR exists, mounting static files")
+    # List files in dist
+    files = glob.glob(os.path.join(STATIC_DIR, "*"))
+    print(f"DEBUG: Files in {STATIC_DIR}: {files}")
+    
     app.mount("/_next", StaticFiles(directory=os.path.join(STATIC_DIR, "_next")), name="next-static")
-    app.mount("/images", StaticFiles(directory=os.path.join(STATIC_DIR, "images")), name="images")
     
     @app.get("/")
     async def serve_root():
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+        index_path = os.path.join(STATIC_DIR, "index.html")
+        print(f"DEBUG: Serving root, index_path: {index_path}, exists: {os.path.exists(index_path)}")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        return {"error": "index.html not found", "path": index_path}
     
     @app.get("/{path:path}")
     async def serve_spa(path: str):
@@ -78,6 +103,7 @@ if os.path.exists(STATIC_DIR):
             return FileResponse(file_path)
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 else:
+    print(f"DEBUG: STATIC_DIR does not exist, serving API info")
     @app.get("/")
     def root():
         """Root endpoint with API info."""
