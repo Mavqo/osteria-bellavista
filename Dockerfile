@@ -14,3 +14,4 @@ EXPOSE 8000
 ENV DATABASE_PATH=/data/osteria.db
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Force rebuild Wed Apr  1 22:12:47 CEST 2026
