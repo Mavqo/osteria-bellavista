@@ -61,8 +61,8 @@ def health():
     return {"status": "ok"}
 
 
-# Static files - serve frontend build
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+# Static files - serve frontend build (only if dist exists)
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 if os.path.exists(STATIC_DIR):
     app.mount("/_next", StaticFiles(directory=os.path.join(STATIC_DIR, "_next")), name="next-static")
     app.mount("/images", StaticFiles(directory=os.path.join(STATIC_DIR, "images")), name="images")
@@ -73,11 +73,9 @@ if os.path.exists(STATIC_DIR):
     
     @app.get("/{path:path}")
     async def serve_spa(path: str):
-        # Serve static files if they exist
         file_path = os.path.join(STATIC_DIR, path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        # Otherwise serve index.html for SPA routing
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 else:
     @app.get("/")

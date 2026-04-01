@@ -13,10 +13,12 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ ./backend/
+# Copia il backend nella root di /app (non in sottocartella)
+COPY backend/ .
+# Copia il frontend build
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist/
 
 EXPOSE 8000
 ENV DATABASE_PATH=/data/osteria.db
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
