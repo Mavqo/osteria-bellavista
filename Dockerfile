@@ -22,7 +22,7 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist/
 # Verifica finale
 RUN ls -la ./frontend/dist/ 2>&1 || echo "WARNING: frontend/dist not found!"
 
-EXPOSE 8000
+EXPOSE 8080
 ENV DATABASE_PATH=/data/osteria.db
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
